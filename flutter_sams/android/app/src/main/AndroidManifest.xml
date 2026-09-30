@@ -1,5 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.sams.attendance">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Network & Connectivity Permissions (SRS Section 15 & 35) -->
     <uses-permission android:name="android.permission.INTERNET"/>
