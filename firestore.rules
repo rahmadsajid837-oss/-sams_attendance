@@ -1,0 +1,161 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Deny All Fallback
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+
+    function isTeacher() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        getUserData(request.auth.uid).role == 'teacher';
+    }
+
+    function isStudent() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        getUserData(request.auth.uid).role == 'student';
+    }
+
+    // ==========================================
+    // 1. Users Collection
+    // ==========================================
+    match /users/{userId} {
+      // User can read their own profile. Teachers can view students enrolled in their classes.
+      allow get: if isSignedIn() && (isOwner(userId) || isTeacher());
+      allow list: if isSignedIn();
+
+      // Creation during registration
+      allow create: if isSignedIn() && isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.role in ['teacher', 'student']
+        && request.resource.data.fullName is string && request.resource.data.fullName.size() <= 100
+        && request.resource.data.email is string && request.resource.data.email.size() <= 150
+        && request.resource.data.phoneNumber is string && request.resource.data.phoneNumber.size() <= 15;
+
+      // Profile updates (role and uid are immutable)
+      allow update: if isOwner(userId)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.email == resource.data.email;
+
+      allow delete: if false;
+    }
+
+    // ==========================================
+    // 2. Classes Collection
+    // ==========================================
+    match /classes/{classId} {
+      // Teachers can read all classes they created. Students can read classes they are enrolled in.
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+
+      // Only teachers can create classes
+      allow create: if isTeacher()
+        && request.resource.data.teacherId == request.auth.uid
+        && request.resource.data.className is string && request.resource.data.className.size() <= 120;
+
+      // Only the teacher who created the class can update or delete it
+      allow update: if isTeacher()
+        && resource.data.teacherId == request.auth.uid
+        && request.resource.data.teacherId == resource.data.teacherId;
+
+      allow delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
+    }
+
+    // ==========================================
+    // 3. Attendance Sessions Collection
+    // ==========================================
+    match /sessions/{sessionId} {
+      // Teachers of the class can read sessions. Enrolled students can read sessions.
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+
+      // Only teachers can create sessions
+      allow create: if isTeacher()
+        && request.resource.data.teacherId == request.auth.uid
+        && request.resource.data.classId is string
+        && request.resource.data.sessionDate is string;
+
+      allow update: if isTeacher()
+        && resource.data.teacherId == request.auth.uid
+        && request.resource.data.teacherId == resource.data.teacherId;
+
+      allow delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
+    }
+
+    // ==========================================
+    // 4. Attendance Records Collection
+    // ==========================================
+    match /attendance_records/{attendanceId} {
+      // Students can ONLY read their own attendance records!
+      // Teachers can read attendance records for classes they teach.
+      allow get: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid ||
+        (isTeacher() && resource.data.teacherId == request.auth.uid)
+      );
+
+      // List query security: students can query their own studentId; teachers their own teacherId
+      allow list: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid ||
+        (isTeacher() && resource.data.teacherId == request.auth.uid)
+      );
+
+      // Only teachers can create attendance records! Students strictly forbidden!
+      allow create: if isTeacher()
+        && request.resource.data.teacherId == request.auth.uid
+        && request.resource.data.status in ['present', 'absent']
+        && request.resource.data.studentId is string
+        && request.resource.data.classId is string
+        && request.resource.data.sessionId is string;
+
+      // Only teachers can update attendance records
+      allow update: if isTeacher()
+        && resource.data.teacherId == request.auth.uid
+        && request.resource.data.teacherId == resource.data.teacherId
+        && request.resource.data.studentId == resource.data.studentId
+        && request.resource.data.status in ['present', 'absent'];
+
+      allow delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
+    }
+
+    // ==========================================
+    // 5. Notifications Collection
+    // ==========================================
+    match /notifications/{notificationId} {
+      // Students can only read and manage their own notifications
+      allow get, list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      // Teachers or backend functions can create notifications for students
+      allow create: if isSignedIn()
+        && request.resource.data.userId is string
+        && request.resource.data.title is string
+        && request.resource.data.message is string;
+
+      // Students can mark their own notifications as read
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId;
+
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

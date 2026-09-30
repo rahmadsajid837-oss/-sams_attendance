@@ -1,0 +1,21 @@
+# Node & Web
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Flutter & Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+flutter_sams/build/
+flutter_sams/.dart_tool/
+flutter_sams/android/.gradle/
+flutter_sams/android/local.properties

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "118511426232",
+    "project_id": "sams-attendance-c4882",
+    "storage_bucket": "sams-attendance-c4882.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:118511426232:android:b2e2b8950aa41e7f64724d",
+        "android_client_info": {
+          "package_name": "com.sams.attendance"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDgysR8gLA1UqCGZLeuhPAHGsADcnhOAdo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Smart Attendance Management System (SAMS)",
+  "description": "Production-ready Smart Attendance Management System (SAMS) with Flutter/Dart mobile architecture, Material Design 3, Firebase Auth, Firestore, Hive offline persistence, automatic background sync, 75% threshold alerts, and reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
