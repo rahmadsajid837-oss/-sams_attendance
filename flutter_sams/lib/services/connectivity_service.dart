@@ -15,19 +15,19 @@ class ConnectivityService {
   }
 
   void _init() {
-    _connectivity.onConnectivityChanged.listen((ConnectivityResult result) {
-      _checkStatus(result);
+    _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
+      _checkStatus(results);
     });
     _checkInitial();
   }
 
   Future<void> _checkInitial() async {
-    final result = await _connectivity.checkConnectivity();
-    _checkStatus(result);
+    final results = await _connectivity.checkConnectivity();
+    _checkStatus(results);
   }
 
-  void _checkStatus(ConnectivityResult result) {
-    final bool online = result != ConnectivityResult.none;
+  void _checkStatus(List<ConnectivityResult> results) {
+    final bool online = results.any((r) => r != ConnectivityResult.none);
     if (_isOnline != online) {
       _isOnline = online;
       _connectionChangeController.add(_isOnline);
